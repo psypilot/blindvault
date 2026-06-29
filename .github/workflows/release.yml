@@ -1,0 +1,35 @@
+name: Release
+
+# On every pushed version tag, build the Windows .exe in CI and attach it to the
+# GitHub release — so published binaries are reproducible and not hand-built.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: pip install pyinstaller cryptography
+
+      - name: Build BlindVault.exe
+        run: >
+          python -m PyInstaller --onefile --windowed --name BlindVault
+          --icon assets/blindvault.ico
+          --add-data "assets/blindvault.ico;."
+          --noconfirm app.py
+
+      - name: Attach the exe to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/BlindVault.exe

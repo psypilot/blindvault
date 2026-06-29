@@ -1,0 +1,47 @@
+# BlindVault resolver — runs the credential-injecting proxy as a dedicated,
+# unprivileged OS user. This is what makes the boundary OS-enforced: the agent's
+# user cannot read this process's memory, the data key, or the vault file.
+#
+# Setup: run deploy/setup-linux.sh first (creates the user, group, dirs, perms).
+# See docs/DEPLOY-linux.md.
+
+[Unit]
+Description=BlindVault resolver (credential-injecting proxy)
+After=network.target
+
+[Service]
+Type=simple
+User=blindvault
+Group=blindvault
+
+# /run/blindvault is created 0750 owned by blindvault:blindvault each start.
+RuntimeDirectory=blindvault
+RuntimeDirectoryMode=0750
+
+# Master password, supplied as a systemd credential (root-owned source file).
+# Encrypt it once with:  systemd-creds encrypt password.txt /etc/blindvault/password.cred
+LoadCredentialEncrypted=password:/etc/blindvault/password.cred
+
+# BLINDVAULT_ALLOW should be "--allow-uid <AGENT_UID>" (set in the env file).
+EnvironmentFile=-/etc/blindvault/blindvault.env
+ExecStart=/usr/bin/blindvault serve --unix /run/blindvault/proxy.sock $BLINDVAULT_ALLOW
+
+# --- hardening (least privilege; mirrors gpg-agent/ssh-agent practice) ---
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+LimitCORE=0
+ReadWritePaths=/var/lib/blindvault
+
+[Install]
+WantedBy=multi-user.target
