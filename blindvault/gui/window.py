@@ -15,9 +15,9 @@ import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from . import resolver
-from .crypto import AuthError, VaultError
-from .service import SOURCE_GENERATED, Vault
+from ..agent import resolver
+from ..core.crypto import AuthError, VaultError
+from ..core.service import SOURCE_GENERATED, Vault
 
 APP_TITLE = "BlindVault"
 CLIPBOARD_CLEAR_SECONDS = 20
@@ -31,6 +31,7 @@ def _icon_file() -> str | None:
     if bundled:
         candidates.append(os.path.join(bundled, "blindvault.ico"))
     here = os.path.dirname(os.path.abspath(__file__))
+    candidates.append(os.path.join(here, "..", "..", "assets", "blindvault.ico"))  # repo root
     candidates.append(os.path.join(here, "..", "assets", "blindvault.ico"))
     candidates.append(os.path.join(here, "assets", "blindvault.ico"))
     for path in candidates:

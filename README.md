@@ -333,8 +333,9 @@ encrypted cli secret manager, postgres credential proxy, python.
 
 ## 🤝 Contributing
 
-Contributions are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Found a
-security issue? Please read [SECURITY.md](SECURITY.md) first.
+Contributions are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and
+[ROADMAP.md](ROADMAP.md) for planned work and **good first issues** to pick up. Found
+a security issue? Please read [SECURITY.md](SECURITY.md) first.
 
 ```bash
 python -m unittest discover -s tests -v

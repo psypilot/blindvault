@@ -17,9 +17,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from blindvault import config, resolver, session  # noqa: E402
+from blindvault.agent import resolver  # noqa: E402
 from blindvault.cli import main  # noqa: E402
-from blindvault.crypto import (  # noqa: E402
+from blindvault.core import config, session  # noqa: E402
+from blindvault.core.crypto import (  # noqa: E402
     AuthError,
     Cipher,
     derive_kek,
@@ -28,7 +29,7 @@ from blindvault.crypto import (  # noqa: E402
     unwrap_data_key,
     wrap_data_key,
 )
-from blindvault.service import SOURCE_GENERATED, SOURCE_MANUAL, Vault  # noqa: E402
+from blindvault.core.service import SOURCE_GENERATED, SOURCE_MANUAL, Vault  # noqa: E402
 
 PASSWORD = "correct horse battery staple"
 
@@ -204,7 +205,7 @@ class ServiceTests(TempVaultCase):
         # Build a fake pre-0.2.0 vault: a plaintext key.bin + a version-1 store.
         from cryptography.fernet import Fernet
 
-        from blindvault import store
+        from blindvault.core import store
 
         home = Path(os.environ[config.ENV_HOME])
         home.mkdir(parents=True, exist_ok=True)
@@ -358,25 +359,25 @@ class CliTests(TempVaultCase):
 
 class PolicyUnitTests(unittest.TestCase):
     def test_extract_hosts(self):
-        from blindvault import policy
+        from blindvault.agent import policy
         args = ["curl", "-H", "Authorization: Bearer x", "https://api.stripe.com/v1/charges"]
         self.assertEqual(policy.extract_hosts(args), ["api.stripe.com"])
 
     def test_host_allowed(self):
-        from blindvault import policy
+        from blindvault.agent import policy
         self.assertTrue(policy.host_allowed("api.stripe.com", ["api.stripe.com"]))
         self.assertTrue(policy.host_allowed("api.stripe.com", ["stripe.com"]))  # subdomain ok
         self.assertFalse(policy.host_allowed("evil.com", ["stripe.com"]))
 
     def test_enforce_commands(self):
-        from blindvault import policy
+        from blindvault.agent import policy
         pol = {"allow_commands": ["curl"], "allow_hosts": []}
         policy.enforce("K", pol, [], "curl")  # allowed, no raise
         with self.assertRaises(policy.PolicyError):
             policy.enforce("K", pol, [], "wget")
 
     def test_enforce_hosts(self):
-        from blindvault import policy
+        from blindvault.agent import policy
         pol = {"allow_commands": [], "allow_hosts": ["api.stripe.com"]}
         policy.enforce("K", pol, ["https://api.stripe.com/x"], "curl")  # allowed
         with self.assertRaises(policy.PolicyError):
@@ -385,15 +386,15 @@ class PolicyUnitTests(unittest.TestCase):
             policy.enforce("K", pol, ["no-url-here"], "curl")  # can't verify => blocked
 
     def test_blob_roundtrip_and_legacy(self):
-        from blindvault.service import _decode_blob, _encode_blob
+        from blindvault.core.service import _decode_blob, _encode_blob
         self.assertEqual(_decode_blob("plain-legacy-value"), ("plain-legacy-value", None))
         value, pol = _decode_blob(_encode_blob("K", "v", {"allow_hosts": ["x"]}), expected_name="K")
         self.assertEqual(value, "v")
         self.assertEqual(pol, {"allow_hosts": ["x"]})
 
     def test_blob_name_binding_detects_swap(self):
-        from blindvault.crypto import VaultError
-        from blindvault.service import _decode_blob, _encode_blob
+        from blindvault.core.crypto import VaultError
+        from blindvault.core.service import _decode_blob, _encode_blob
         swapped = _encode_blob("PROD", "prod-value", None)  # belongs to PROD
         with self.assertRaises(VaultError):
             _decode_blob(swapped, expected_name="STAGING")   # but read as STAGING
@@ -447,7 +448,7 @@ class PolicyCliTests(TempVaultCase):
 
 class EnvImportTests(TempVaultCase):
     def test_parse(self):
-        from blindvault import envfile
+        from blindvault.agent import envfile
         text = (
             "# a comment\n"
             "export API_KEY=abc123\n"
@@ -480,7 +481,7 @@ class EnvImportTests(TempVaultCase):
 
 class KdfTests(unittest.TestCase):
     def test_default_n_ignores_weak_override_without_flag(self):
-        from blindvault import crypto
+        from blindvault.core import crypto
         keys = ("BLINDVAULT_SCRYPT_N", "BLINDVAULT_ALLOW_WEAK_KDF")
         saved = {k: os.environ.get(k) for k in keys}
         try:
@@ -494,7 +495,7 @@ class KdfTests(unittest.TestCase):
                 os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
 
     def test_validate_rejects_abusive_params(self):
-        from blindvault import crypto
+        from blindvault.core import crypto
         with self.assertRaises(crypto.VaultError):
             crypto.validate_scrypt_params(3, 8, 1)        # not a power of two
         with self.assertRaises(crypto.VaultError):
@@ -512,7 +513,7 @@ class BrokerTests(TempVaultCase):
         import urllib.request
         from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-        from blindvault import broker as broker_mod
+        from blindvault.broker import server as broker_mod
 
         received = {}
 
@@ -564,7 +565,7 @@ class BrokerTests(TempVaultCase):
         import urllib.error
         import urllib.request
 
-        from blindvault import broker as broker_mod
+        from blindvault.broker import server as broker_mod
 
         vault = self._unlocked()
         vault.add("LOOSE", "value")  # no allow_hosts => cannot be proxied safely
@@ -584,7 +585,7 @@ class BrokerTests(TempVaultCase):
 
 class HardeningTests(unittest.TestCase):
     def test_hardening_helpers_are_safe_everywhere(self):
-        from blindvault import hardening
+        from blindvault.broker import hardening
         self.assertIsInstance(hardening.harden_process(), dict)
         hardening.drop_privileges("no-such-user-zzz")  # no-op unless root; must not raise
         warning = hardening.ptrace_scope_warning()
@@ -624,7 +625,7 @@ class Phase2BrokerTests(TempVaultCase):
         import os
         import threading
 
-        from blindvault import broker as broker_mod
+        from blindvault.broker import server as broker_mod
 
         received = {}
         up, up_port = self._start_upstream(received)
@@ -654,7 +655,7 @@ class Phase2BrokerTests(TempVaultCase):
         import os
         import threading
 
-        from blindvault import broker as broker_mod
+        from blindvault.broker import server as broker_mod
 
         self._unlocked()
         sock_path = os.path.join(self._tmp.name, "proxy.sock")
@@ -688,7 +689,7 @@ class Phase2WindowsTests(TempVaultCase):
         import base64
         import threading
 
-        from blindvault import broker as broker_mod, winpipe
+        from blindvault.broker import server as broker_mod, winpipe
 
         received = {}
         up, up_port = _start_tcp_upstream(received)
@@ -718,7 +719,7 @@ class Phase2WindowsTests(TempVaultCase):
     def test_pipe_rejects_unauthorized_sid(self):
         import threading
 
-        from blindvault import broker as broker_mod, winpipe
+        from blindvault.broker import server as broker_mod, winpipe
 
         self._unlocked()
         my_sid = winpipe.current_user_sid()
@@ -739,7 +740,7 @@ class Phase2WindowsTests(TempVaultCase):
 
 class PgProtocolTests(unittest.TestCase):
     def test_scram_rfc7677_vector(self):
-        from blindvault import pgproxy
+        from blindvault.broker import pgproxy
         client_first_bare = b"n=user,r=rOprNGfwEbeRWgbNEkqO"
         server_first = (b"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,"
                         b"s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096")
@@ -749,7 +750,7 @@ class PgProtocolTests(unittest.TestCase):
         self.assertEqual(server_sig, b"6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")
 
     def test_md5_vector(self):
-        from blindvault import pgproxy
+        from blindvault.broker import pgproxy
         self.assertEqual(
             pgproxy.md5_password("secret", "alice", b"\x01\x02\x03\x04"),
             "md598a0412b9c31436fc53776e863350083",
@@ -759,7 +760,7 @@ class PgProtocolTests(unittest.TestCase):
         import socket
         import struct
 
-        from blindvault import pgproxy
+        from blindvault.broker import pgproxy
         a, b = socket.socketpair()
         try:
             pgproxy.write_message(a, b"R", struct.pack("!I", 0))
@@ -776,8 +777,8 @@ class PgConnectorTests(TempVaultCase):
         import struct
         import threading
 
-        from blindvault import pgproxy
-        from blindvault.service import Vault
+        from blindvault.broker import pgproxy
+        from blindvault.core.service import Vault
 
         received = {}
         backend = socket.create_server(("127.0.0.1", 0))
@@ -855,8 +856,8 @@ class PgConnectorTests(TempVaultCase):
         import struct
         import threading
 
-        from blindvault import pgproxy
-        from blindvault.service import Vault
+        from blindvault.broker import pgproxy
+        from blindvault.core.service import Vault
 
         host = os.environ.get("PGHOST", "127.0.0.1")
         port = int(os.environ.get("PGPORT", "5432"))

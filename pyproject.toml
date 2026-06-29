@@ -33,5 +33,5 @@ Issues = "https://github.com/psypilot/blindvault/issues"
 blindvault = "blindvault.cli:main"
 bv = "blindvault.cli:main"
 
-[tool.setuptools]
-packages = ["blindvault"]
+[tool.setuptools.packages.find]
+include = ["blindvault*"]

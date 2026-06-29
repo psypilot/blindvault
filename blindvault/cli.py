@@ -27,9 +27,11 @@ import os
 import subprocess
 import sys
 
-from . import __version__, config, envfile, policy, resolver, session
-from .crypto import MIN_SCRYPT_N, AuthError, VaultError
-from .service import SOURCE_MANUAL, Vault
+from . import __version__
+from .agent import envfile, policy, resolver
+from .core import config, session
+from .core.crypto import MIN_SCRYPT_N, AuthError, VaultError
+from .core.service import SOURCE_MANUAL, Vault
 
 
 class CliError(Exception):
@@ -401,7 +403,7 @@ def cmd_gui(args: argparse.Namespace) -> int:
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
-    from . import broker, hardening
+    from .broker import hardening, server as broker
 
     # systemd LoadCredential support: read the master password from the credential
     # directory so the service can unlock unattended without it being in argv/env.
@@ -426,7 +428,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     served = broker.Broker(vault, audit_path=audit_path,
                            allowed_uids=allowed, allowed_sids=allowed_sids)
     if args.pg_listen:
-        from . import pgproxy
+        from .broker import pgproxy
 
         if not (args.pg_secret and args.pg_backend and args.pg_user):
             raise CliError("--pg-listen requires --pg-secret, --pg-backend, and --pg-user")
@@ -454,7 +456,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
 def cmd_proxy(args: argparse.Namespace) -> int:
     import base64
 
-    from . import winpipe
+    from .broker import winpipe
 
     payload = {"secret": args.secret, "path": args.path, "method": args.method,
                "headers": {}, "body_b64": None}

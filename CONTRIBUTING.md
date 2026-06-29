@@ -29,14 +29,30 @@ powershell -ExecutionPolicy Bypass -File build_exe.ps1
 
 ```
 blindvault/
-  config.py    where the vault lives (~/.blindvault, override w/ BLINDVAULT_HOME)
-  crypto.py    Fernet (AES-CBC + HMAC) — no home-rolled crypto
-  store.py     atomic encrypted JSON store
-  resolver.py  the core: parse refs -> inject values -> scrub output
-  service.py   Vault: the one place secrets are encrypted/decrypted
-  cli.py       init / set / gen / ls / rm / run / reveal / gui
-  gui.py       the human-facing desktop app (tkinter)
-tests/         unittest suite
+  cli.py            the command-line interface (dispatch for every subcommand)
+  __main__.py       enables `python -m blindvault`
+  core/             the vault itself
+    config.py       where the vault lives (~/.blindvault, override w/ BLINDVAULT_HOME)
+    crypto.py       scrypt KDF + Fernet envelope (AES-CBC + HMAC) — no home-rolled crypto
+    store.py        atomic encrypted JSON store
+    session.py      short-lived unlock session (cached data key + TTL)
+    service.py      Vault: the one place secrets are encrypted/decrypted
+  agent/            what an AI agent interacts with
+    resolver.py     parse {{secret:NAME}} refs -> inject values -> scrub output
+    policy.py       per-secret usage policies (allowed hosts/commands)
+    envfile.py      .env import parser
+  broker/           the resolver: "use a secret you never hold"
+    server.py       credential-injecting proxy (HTTP + Unix-socket / TCP transports)
+    peercred.py     Unix-socket UID peer auth (SO_PEERCRED / getpeereid)
+    hardening.py    process self-protection (PR_SET_DUMPABLE, mlock, privilege drop)
+    winpipe.py      Windows named-pipe transport + token-SID auth
+    pgproxy.py      PostgreSQL connector (SCRAM-SHA-256 / md5)
+  gui/
+    window.py       the human-facing desktop app (tkinter)
+tests/              unittest suite (run on Linux & Windows in CI)
+docs/               design, deploy, and security/red-team docs
+deploy/             systemd unit + Linux setup script
+examples/           hands-on usage walkthroughs
 ```
 
 ## Guidelines

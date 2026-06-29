@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 
 from . import peercred
-from .crypto import VaultError
+from ..core.crypto import VaultError
 
 DEFAULT_PORT = 8771
 MAX_RESPONSE_BYTES = 1 << 20  # 1 MiB cap on what we read/return

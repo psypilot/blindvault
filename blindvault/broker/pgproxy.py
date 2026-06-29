@@ -253,7 +253,7 @@ class PgConnector:
         self._audit = audit or (lambda **_: None)
 
     def _handle(self, client: socket.socket) -> None:
-        from . import policy
+        from ..agent import policy
 
         try:
             client_params = negotiate_and_read_startup(client)
