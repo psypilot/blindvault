@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] — 2026-06-29
+
+### Added
+- **Windows installer** (`BlindVault-Setup.exe`, built with Inno Setup) — a proper
+  per-user installation: Start Menu shortcut, optional desktop icon, the **`bv` CLI
+  on PATH**, and a clean uninstaller (no admin required).
+- **Standalone `bv.exe`** — the CLI as a single executable (bundles the broker,
+  connectors, and GUI), so `bv` works without a Python install.
+- Production documentation: a rewritten, importance-ordered **README**, a
+  step-by-step **[INSTALL.md](INSTALL.md)**, and a **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
+  that walks every common issue one by one. Added **[ROADMAP.md](ROADMAP.md)** for
+  contributors (planned work + good first issues).
+
+### Changed
+- **Internal refactor** into `core/`, `agent/`, `broker/`, and `gui/` sub-packages
+  for a cleaner, navigable codebase. Behavior, the vault format, and the CLI are
+  unchanged (verified by the full test suite + a wheel install).
+- Hardened GUI dialog presentation (centered over the window, brought to the front,
+  grab applied safely) so dialogs always appear reliably.
+
 ## [0.8.0] — 2026-06-29
 
 ### Added — PostgreSQL credential-injecting connector
@@ -182,6 +202,7 @@ Initial public release.
 - **Standalone Windows build** via PyInstaller (`build_exe.ps1`).
 - Test suite (Python 3.9–3.12) and CI on Linux + Windows.
 
+[0.9.0]: https://github.com/psypilot/blindvault/releases/tag/v0.9.0
 [0.8.0]: https://github.com/psypilot/blindvault/releases/tag/v0.8.0
 [0.7.0]: https://github.com/psypilot/blindvault/releases/tag/v0.7.0
 [0.6.0]: https://github.com/psypilot/blindvault/releases/tag/v0.6.0

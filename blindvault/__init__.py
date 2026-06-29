@@ -6,4 +6,4 @@ is substituted by a trusted resolver only at the moment a child process runs,
 and any value that comes back in the output is scrubbed before the agent sees it.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"

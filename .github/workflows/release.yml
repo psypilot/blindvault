@@ -1,7 +1,10 @@
 name: Release
 
-# On every pushed version tag, build the Windows .exe in CI and attach it to the
-# GitHub release — so published binaries are reproducible and not hand-built.
+# On every pushed version tag, build the Windows artifacts in CI and attach them to
+# the GitHub release — so published binaries are reproducible and not hand-built:
+#   BlindVault.exe        the GUI app (standalone)
+#   bv.exe                the CLI (standalone)
+#   BlindVault-Setup.exe  the installer (Start Menu + bv on PATH + uninstaller)
 on:
   push:
     tags: ["v*"]
@@ -10,7 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  build-exe:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,16 +23,42 @@ jobs:
           python-version: "3.12"
 
       - name: Install build dependencies
-        run: pip install pyinstaller cryptography
+        run: pip install pyinstaller cryptography pywin32
 
-      - name: Build BlindVault.exe
+      - name: Build the GUI (BlindVault.exe)
         run: >
           python -m PyInstaller --onefile --windowed --name BlindVault
           --icon assets/blindvault.ico
           --add-data "assets/blindvault.ico;."
           --noconfirm app.py
 
-      - name: Attach the exe to the release
+      - name: Build the CLI (bv.exe)
+        run: >
+          python -m PyInstaller --onefile --console --name bv
+          --icon assets/blindvault.ico
+          --add-data "assets/blindvault.ico;."
+          --hidden-import blindvault.broker.server
+          --hidden-import blindvault.broker.winpipe
+          --hidden-import blindvault.broker.pgproxy
+          --hidden-import blindvault.broker.hardening
+          --hidden-import blindvault.broker.peercred
+          --hidden-import blindvault.gui
+          --noconfirm cli_entry.py
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build the installer (BlindVault-Setup.exe)
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$version" installer\blindvault.iss
+
+      - name: Attach assets to the release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/BlindVault.exe
+          files: |
+            dist/BlindVault.exe
+            dist/bv.exe
+            dist/BlindVault-Setup.exe

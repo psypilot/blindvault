@@ -45,13 +45,16 @@ the core app** — see [_When do you need PostgreSQL or SSH?_](#-when-do-you-nee
 
 <br>
 
-### Option A — Desktop app (easiest, no Python needed)
+### Option A — Desktop app (Windows, no Python needed)
 
-1. Download **`BlindVault.exe`** from the [**latest release**](https://github.com/psypilot/blindvault/releases/latest).
-2. Double-click it.
-3. On first launch it asks you to create a **master password** — done.
+Download **`BlindVault-Setup.exe`** from the [**latest release**](https://github.com/psypilot/blindvault/releases/latest)
+and run it. It installs BlindVault (Start Menu shortcut, an uninstaller, and the
+**`bv` command on your PATH**) — no admin required. On first launch it asks you to
+create a **master password**.
 
-> Windows may show a SmartScreen warning (the binary is unsigned): **More info → Run anyway.**
+> Prefer not to install? Grab the standalone **`BlindVault.exe`** instead and just
+> double-click it. Windows may show a SmartScreen warning (the binaries are unsigned):
+> **More info → Run anyway.**
 
 <br>
 

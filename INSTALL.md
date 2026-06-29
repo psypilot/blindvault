@@ -20,17 +20,24 @@ SSH). If anything goes wrong, jump to **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ## Path A — Desktop app (Windows, no Python)
 
+**Recommended — the installer:**
+
 1. Open the [**latest release**](https://github.com/psypilot/blindvault/releases/latest).
-2. Download **`BlindVault.exe`**.
-3. Double-click it.
-4. The first time, it asks you to **create a master password**. Choose a strong one —
-   it encrypts your vault and **cannot be recovered**.
+2. Download **`BlindVault-Setup.exe`** and run it. It installs BlindVault per-user
+   (no admin): a Start Menu shortcut, an uninstaller, and the **`bv` command on your
+   PATH** so you can use the CLI in any terminal.
+3. Launch **BlindVault** from the Start Menu. The first time, it asks you to
+   **create a master password** — choose a strong one; it encrypts your vault and
+   **cannot be recovered**.
 
-> **SmartScreen warning?** The binary is unsigned, so Windows may say *"Windows
-> protected your PC."* Click **More info → Run anyway**. (Or build it yourself —
-> `powershell -ExecutionPolicy Bypass -File build_exe.ps1`.)
+**Prefer no install?** Download the standalone **`BlindVault.exe`** instead and just
+double-click it. Nothing is installed (and `bv` is not added to PATH).
 
-You're done. The app stores its encrypted vault in `%USERPROFILE%\.blindvault`.
+> **SmartScreen warning?** The binaries are unsigned, so Windows may say *"Windows
+> protected your PC."* Click **More info → Run anyway**. (Or build everything yourself
+> — `powershell -ExecutionPolicy Bypass -File installer\build-windows.ps1`.)
+
+Your encrypted vault lives in `%USERPROFILE%\.blindvault`.
 
 <br>
 
@@ -47,7 +54,7 @@ pip install git+https://github.com/psypilot/blindvault.git
 Verify:
 
 ```bash
-bv --version          # -> blindvault 0.8.0
+bv --version          # -> blindvault 0.9.0
 ```
 
 > `bv` and `blindvault` are the same command. If your shell can't find `bv`, your
