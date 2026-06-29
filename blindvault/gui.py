@@ -72,15 +72,37 @@ class _Dialog(tk.Toplevel):
 
     def __init__(self, parent: tk.Misc, title: str) -> None:
         super().__init__(parent)
+        self._parent = parent
+        self.withdraw()  # stay hidden until laid out and positioned (no flash, behind, or off-screen)
         self.title(title)
         self.resizable(False, False)
         self.transient(parent.winfo_toplevel())
         self.result = None
         self.body = ttk.Frame(self, padding=14)
         self.body.grid(row=0, column=0, sticky="nsew")
-        self.grab_set()
-        # Centre once all widgets (added by subclasses) have been laid out.
-        self.after(0, lambda: _center_window(self))
+        # Present once subclasses have added their widgets AND the window is viewable, so
+        # grab_set never fails ("window not viewable") and the dialog reliably appears in
+        # front and on-screen — centred over the parent window (robust across DPI/monitors).
+        self.after(0, self._present)
+
+    def _present(self) -> None:
+        try:
+            self.update_idletasks()
+            w, h = self.winfo_reqwidth(), self.winfo_reqheight()
+            top = self._parent.winfo_toplevel()
+            if top.winfo_viewable():
+                x = top.winfo_rootx() + max(0, (top.winfo_width() - w) // 2)
+                y = top.winfo_rooty() + max(0, (top.winfo_height() - h) // 2)
+            else:
+                x = max(0, (self.winfo_screenwidth() - w) // 2)
+                y = max(0, (self.winfo_screenheight() - h) // 2)
+            self.geometry(f"+{x}+{y}")
+            self.deiconify()
+            self.lift()
+            self.grab_set()
+            self.focus_force()
+        except tk.TclError:
+            pass
 
     def _buttons(self, ok_text: str = "Save") -> None:
         bar = ttk.Frame(self, padding=(14, 0, 14, 14))
